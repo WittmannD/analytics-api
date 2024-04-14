@@ -3,6 +3,7 @@ import { AnalyticsService } from './analytics.service';
 import { AnalyticsController } from './analytics.controller';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { MeasurementProtocolModule } from '../measurement-protocol/measurement-protocol.module';
+import { DiskStorage } from '../measurement-protocol/storage/disk-storage';
 
 @Module({
   imports: [
@@ -13,6 +14,7 @@ import { MeasurementProtocolModule } from '../measurement-protocol/measurement-p
         measurementId: configService.get<string>(
           'GOOGLE_ANALYTICS_MEASUREMENT_ID',
         ),
+        storage: DiskStorage,
       }),
       inject: [ConfigService],
     }),
