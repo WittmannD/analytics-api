@@ -1,13 +1,14 @@
-import { Inject, Injectable } from '@nestjs/common';
+import { Inject, Injectable, Logger } from '@nestjs/common';
 import { HttpService } from '@nestjs/axios';
+import { isAxiosError } from 'axios';
 import { firstValueFrom } from 'rxjs';
 import * as crypto from 'node:crypto';
 import * as _ from 'lodash';
-import {
-  MEASUREMENT_PROTOCOL_OPTIONS,
-} from './constants';
+import { MEASUREMENT_PROTOCOL_OPTIONS } from './constants';
 import { ModuleOptions } from './interfaces';
 import { SessionService } from './session.service';
+import { HttpServiceError } from '../common/errors/http-service-error';
+import * as util from 'node:util';
 
 export interface FireEventOptions extends Required<ModuleOptions> {
   clientId?: string;
@@ -15,6 +16,8 @@ export interface FireEventOptions extends Required<ModuleOptions> {
 
 @Injectable()
 export class MeasurementProtocolService {
+  private readonly logger = new Logger(MeasurementProtocolService.name);
+
   constructor(
     @Inject(MEASUREMENT_PROTOCOL_OPTIONS)
     private readonly options: ModuleOptions,
@@ -57,25 +60,40 @@ export class MeasurementProtocolService {
       events: [{ name, params }],
     };
 
-    const response = await firstValueFrom(
-      this.httpService.post('', payload, this.getHttpConfig(config)),
-    );
+    try {
+      const response = await firstValueFrom(
+        this.httpService.post('', payload, this.getHttpConfig(config)),
+      );
+
+      this.logger.log(
+        `Response ${response.status}. Event: ${util.inspect(payload, false, 3, true)}`,
+      );
+    } catch (err: any) {
+      if (isAxiosError(err)) {
+        if (config.debug) {
+          const validation = err.response?.data;
+
+          this.logger.error(
+            `Event: ${name} with parameters ${util.inspect(payload, false, 3, true)} \
+            didn't pass validation ${util.inspect(validation, false, 3, true)}`,
+          );
+        }
+
+        throw new HttpServiceError(
+          err.message,
+          err.config,
+          err.response?.config,
+        );
+      }
+
+      throw err;
+    }
 
     await this.sessionService.update?.(clientId, {
       ...session,
       ...payload,
       lastOperationAt: new Date(),
     });
-    console.log(config, params, response.status);
-
-    if (config.debug) {
-      const validation = response.data;
-      console.log(
-        `Event: ${name} with parameters ${JSON.stringify(
-          payload,
-        )} didn't pass validation ${JSON.stringify(validation)}`,
-      );
-    }
 
     return {
       clientId,

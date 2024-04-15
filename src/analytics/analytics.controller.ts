@@ -3,14 +3,12 @@ import {
   Post,
   Body,
   UseGuards,
-  ValidationPipe,
+  HttpException,
+  HttpStatus,
 } from '@nestjs/common';
 import { AnalyticsService } from './analytics.service';
 import { ApiOperation, ApiSecurity, ApiTags } from '@nestjs/swagger';
-import {
-  EventRequestDto,
-  EventRequestDtoFactory,
-} from './dto/event-request.dto';
+import { EventRequestDto } from './dto/event-request.dto';
 import { PageViewEventDto } from './dto/page-view-event.dto';
 import { ApiEventRequestBody } from '../common/decorators/api-event-request-body.decorator';
 import { FirstVisitEventDto } from './dto/first-visit-event.dto';
@@ -23,6 +21,8 @@ import { ApiEventExceptions } from '../common/decorators/api-event-exceptions';
 import { CustomEventsRequestDto } from './dto/custom-events-request.dto';
 import { CampaignDetailsEventDto } from './dto/campaign-details-event.dto';
 import { EventRequestValidationPipe } from '../common/pipes/event-request-validation-pipe';
+import { HttpServiceError } from '../common/errors/http-service-error';
+import { handleExceptions } from '../common/utils/handle-exceptions';
 
 @ApiSecurity('googleAnalyticsApiSecret')
 @ApiSecurity('googleAnalyticsMeasurementId')
@@ -69,11 +69,15 @@ export class AnalyticsController {
     @Body(EventRequestValidationPipe(FirstVisitEventDto))
     eventDto: EventRequestDto<FirstVisitEventDto>,
   ) {
-    return await this.analyticsService.firstVisit(eventDto.event, {
-      clientId: eventDto.client_id,
-      apiSecret,
-      measurementId,
-    });
+    try {
+      return await this.analyticsService.firstVisit(eventDto.event, {
+        clientId: eventDto.client_id,
+        apiSecret,
+        measurementId,
+      });
+    } catch (err) {
+      handleExceptions(err);
+    }
   }
 
   @ApiOperation({

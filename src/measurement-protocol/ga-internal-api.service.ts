@@ -1,4 +1,4 @@
-import { Inject, Injectable } from '@nestjs/common';
+import { Inject, Injectable, Logger } from '@nestjs/common';
 import { MEASUREMENT_PROTOCOL_OPTIONS } from './constants';
 import { ModuleOptions } from './interfaces';
 import { HttpService } from '@nestjs/axios';
@@ -7,6 +7,8 @@ import * as _ from 'lodash';
 import * as qs from 'qs';
 import { SessionService } from './session.service';
 import crypto from 'node:crypto';
+import { isAxiosError } from 'axios';
+import { HttpServiceError } from '../common/errors/http-service-error';
 
 export interface HitOptions extends Required<ModuleOptions> {
   clientId?: string;
@@ -14,6 +16,8 @@ export interface HitOptions extends Required<ModuleOptions> {
 
 @Injectable()
 export class GAInternalApiService {
+  private readonly logger = new Logger(GAInternalApiService.name);
+
   constructor(
     @Inject(MEASUREMENT_PROTOCOL_OPTIONS)
     private readonly options: ModuleOptions,
@@ -81,14 +85,24 @@ export class GAInternalApiService {
       _et,
     };
 
-    const response = await firstValueFrom(
-      this.httpService.post(
-        qs.stringify(queryParams, { allowDots: true, skipNulls: true }),
-        null,
-        this.getHttpConfig(),
-      ),
-    );
+    try {
+      const response = await firstValueFrom(
+        this.httpService.post(
+          qs.stringify(queryParams, { allowDots: true, skipNulls: true }),
+          null,
+          this.getHttpConfig(),
+        ),
+      );
 
-    console.log(response.status, response.data);
+      this.logger.log(`Response ${response.status}. Event: ${queryParams}`);
+    } catch (err: any) {
+      if (isAxiosError(err)) {
+        throw new HttpServiceError(
+          err.message,
+          err.config,
+          err.response?.config,
+        );
+      }
+    }
   }
 }

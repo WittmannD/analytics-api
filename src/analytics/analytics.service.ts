@@ -4,7 +4,6 @@ import { MeasurementProtocolService } from '../measurement-protocol/measurement-
 import { FirstVisitEventDto } from './dto/first-visit-event.dto';
 import { DepositEventDto } from './dto/deposit-event.dto';
 import { GAInternalApiService } from '../measurement-protocol/ga-internal-api.service';
-import e from 'express';
 
 interface EventOptions {
   apiSecret: string;
