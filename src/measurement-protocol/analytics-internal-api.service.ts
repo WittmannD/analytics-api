@@ -15,8 +15,8 @@ export interface HitOptions extends Required<ModuleOptions> {
 }
 
 @Injectable()
-export class GAInternalApiService {
-  private readonly logger = new Logger(GAInternalApiService.name);
+export class AnalyticsInternalApiService {
+  private readonly logger = new Logger(AnalyticsInternalApiService.name);
 
   constructor(
     @Inject(MEASUREMENT_PROTOCOL_OPTIONS)
@@ -88,7 +88,11 @@ export class GAInternalApiService {
     try {
       const response = await firstValueFrom(
         this.httpService.post(
-          qs.stringify(queryParams, { allowDots: true, skipNulls: true }),
+          qs.stringify(queryParams, {
+            allowDots: true,
+            skipNulls: true,
+            addQueryPrefix: true,
+          }),
           null,
           this.getHttpConfig(),
         ),
@@ -104,5 +108,10 @@ export class GAInternalApiService {
         );
       }
     }
+
+    return {
+      session_id: session.sessionId,
+      client_id: clientId,
+    };
   }
 }

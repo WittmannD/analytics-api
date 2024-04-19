@@ -1,11 +1,4 @@
-import {
-  Controller,
-  Post,
-  Body,
-  UseGuards,
-  HttpException,
-  HttpStatus,
-} from '@nestjs/common';
+import { Controller, Post, Body, UseGuards } from '@nestjs/common';
 import { AnalyticsService } from './analytics.service';
 import { ApiOperation, ApiSecurity, ApiTags } from '@nestjs/swagger';
 import { EventRequestDto } from './dto/event-request.dto';
@@ -21,7 +14,6 @@ import { ApiEventExceptions } from '../common/decorators/api-event-exceptions';
 import { CustomEventsRequestDto } from './dto/custom-events-request.dto';
 import { CampaignDetailsEventDto } from './dto/campaign-details-event.dto';
 import { EventRequestValidationPipe } from '../common/pipes/event-request-validation-pipe';
-import { HttpServiceError } from '../common/errors/http-service-error';
 import { handleExceptions } from '../common/utils/handle-exceptions';
 
 @ApiSecurity('googleAnalyticsApiSecret')
@@ -46,11 +38,16 @@ export class AnalyticsController {
     @Body(EventRequestValidationPipe(PageViewEventDto))
     eventDto: EventRequestDto<PageViewEventDto>,
   ) {
-    return await this.analyticsService.pageView(eventDto.event, {
-      clientId: eventDto.client_id,
-      apiSecret,
-      measurementId,
-    });
+    try {
+      return await this.analyticsService.pageView(eventDto.event, {
+        clientId: eventDto.client_id,
+        userId: eventDto.user_id,
+        apiSecret,
+        measurementId,
+      });
+    } catch (err) {
+      handleExceptions(err);
+    }
   }
 
   @ApiOperation({
@@ -72,6 +69,7 @@ export class AnalyticsController {
     try {
       return await this.analyticsService.firstVisit(eventDto.event, {
         clientId: eventDto.client_id,
+        userId: eventDto.user_id,
         apiSecret,
         measurementId,
       });
@@ -95,11 +93,16 @@ export class AnalyticsController {
     @Body(EventRequestValidationPipe(CampaignDetailsEventDto))
     eventDto: EventRequestDto<CampaignDetailsEventDto>,
   ) {
-    return await this.analyticsService.firstVisit(eventDto.event, {
-      clientId: eventDto.client_id,
-      apiSecret,
-      measurementId,
-    });
+    try {
+      return await this.analyticsService.firstVisit(eventDto.event, {
+        clientId: eventDto.client_id,
+        userId: eventDto.user_id,
+        apiSecret,
+        measurementId,
+      });
+    } catch (err) {
+      handleExceptions(err);
+    }
   }
 
   @ApiOperation({
@@ -117,11 +120,16 @@ export class AnalyticsController {
     @Body(EventRequestValidationPipe(DepositEventDto))
     eventDto: EventRequestDto<DepositEventDto>,
   ) {
-    return await this.analyticsService.deposit(eventDto.event, {
-      clientId: eventDto.client_id,
-      apiSecret,
-      measurementId,
-    });
+    try {
+      return await this.analyticsService.deposit(eventDto.event, {
+        clientId: eventDto.client_id,
+        userId: eventDto.user_id,
+        apiSecret,
+        measurementId,
+      });
+    } catch (err) {
+      handleExceptions(err);
+    }
   }
 
   @ApiOperation({
@@ -136,17 +144,15 @@ export class AnalyticsController {
     @GAMeasurementId() measurementId: string,
     @Body() body: CustomEventsRequestDto,
   ) {
-    return await this.analyticsService.customEvents(body.events, {
-      clientId: body.client_id,
-      apiSecret,
-      measurementId,
-    });
+    try {
+      return await this.analyticsService.customEvents(body.events, {
+        clientId: body.client_id,
+        userId: body.user_id,
+        apiSecret,
+        measurementId,
+      });
+    } catch (err) {
+      handleExceptions(err);
+    }
   }
-
-  // @ApiResponse({ status: 204, description: 'Event was successfully sent.' })
-  // @ApiEventRequestBody(PageViewEventDto)
-  // @Post('campaign_details')
-  // campaignDetails(@Body() eventDto: EventRequestDto<PageViewEventDto>) {
-  //   return this.analyticsService.pageView(eventDto.client_id, eventDto.event);
-  // }
 }

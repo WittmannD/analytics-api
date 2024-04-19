@@ -12,7 +12,7 @@ import {
 } from './constants';
 import { fillOptions } from './default.config';
 import { SessionService } from './session.service';
-import { GAInternalApiService } from './ga-internal-api.service';
+import { AnalyticsInternalApiService } from './analytics-internal-api.service';
 
 @Module({
   imports: [HttpModule],
@@ -33,8 +33,8 @@ import { GAInternalApiService } from './ga-internal-api.service';
     },
     SessionService,
     MeasurementProtocolService,
-    GAInternalApiService,
+    AnalyticsInternalApiService,
   ],
-  exports: [MeasurementProtocolService, GAInternalApiService],
+  exports: [MeasurementProtocolService, AnalyticsInternalApiService],
 })
 export class MeasurementProtocolModule extends ConfigurableModuleClass {}

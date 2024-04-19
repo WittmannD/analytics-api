@@ -2,7 +2,6 @@ import { SessionData, SessionIdStorage } from './session-id-storage';
 import { open } from 'sqlite';
 import * as sqlite3 from 'sqlite3';
 
-
 export interface SessionEntity extends SessionData {
   clientId: string;
   sessionId: number;
@@ -10,7 +9,7 @@ export interface SessionEntity extends SessionData {
 }
 
 export class DiskStorage extends SessionIdStorage {
-  private withDBConnection = async function* () {
+  private dbConnectionContext = async function* () {
     const db = await open({
       filename: 'sessions.sqlite',
       driver: sqlite3.Database,
@@ -24,7 +23,7 @@ export class DiskStorage extends SessionIdStorage {
   };
 
   async initialize(): Promise<void> {
-    for await (const db of this.withDBConnection()) {
+    for await (const db of this.dbConnectionContext()) {
       await db.exec(
         `CREATE TABLE IF NOT EXISTS session (
   clientId VARCHAR(255),
@@ -37,7 +36,7 @@ export class DiskStorage extends SessionIdStorage {
   }
 
   async get(clientId: string): Promise<SessionEntity | undefined> {
-    for await (const db of this.withDBConnection()) {
+    for await (const db of this.dbConnectionContext()) {
       return await db.get<SessionEntity>(
         'SELECT * FROM session WHERE clientId = :clientId ORDER BY lastOperationAt;',
         {
@@ -47,8 +46,20 @@ export class DiskStorage extends SessionIdStorage {
     }
   }
 
+  async delete(clientId: string, sessionId: number): Promise<void> {
+    for await (const db of this.dbConnectionContext()) {
+      await db.run(
+        'DELETE FROM session WHERE clientId = :clientId AND sessionId = :sessionId;',
+        {
+          ':clientId': clientId,
+          ':sessionId': sessionId,
+        },
+      );
+    }
+  }
+
   async put(clientId: string, sessionId: number) {
-    for await (const db of this.withDBConnection()) {
+    for await (const db of this.dbConnectionContext()) {
       await db.run(
         `INSERT INTO session (clientId, sessionId, lastOperationAt) VALUES (:clientId, :sessionId, :lastOperationAt);`,
         {
@@ -61,7 +72,7 @@ export class DiskStorage extends SessionIdStorage {
   }
 
   async onOperation(clientId: string, data: SessionData) {
-    for await (const db of this.withDBConnection()) {
+    for await (const db of this.dbConnectionContext()) {
       await db.run(
         `UPDATE session SET lastOperationAt = :lastOperationAt WHERE clientId = :clientId AND sessionId = :sessionId`,
         {

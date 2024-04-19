@@ -14,5 +14,6 @@ export abstract class SessionIdStorage {
   abstract get(
     clientId: string,
   ): Promise<SessionData | undefined> | SessionData | undefined;
-  abstract put(clientId: string, sessionId: number): Promise<any> | any;
+  abstract put(clientId: string, sessionId: number): Promise<void> | void;
+  abstract delete(clientId: string, sessionId: number): Promise<void> | void;
 }

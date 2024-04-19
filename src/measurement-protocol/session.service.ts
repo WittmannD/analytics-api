@@ -20,6 +20,8 @@ export class SessionService {
     ) {
       const sessionId = Date.now();
       await this.sessionStorage.put(clientId, sessionId);
+      session &&
+        (await this.sessionStorage.delete(clientId, session.sessionId));
 
       return {
         sessionId,

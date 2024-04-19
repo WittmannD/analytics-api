@@ -2,12 +2,31 @@ import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import {
   ArrayNotEmpty,
   IsArray,
+  IsDefined,
   IsObject,
   IsOptional,
   IsString,
   Length,
+  MaxLength,
+  ValidateNested,
 } from 'class-validator';
-import { clientIdPropertyDescriptionDoc, userIdPropertyDescriptionDoc } from '../../docs/documents';
+import {
+  clientIdPropertyDescriptionDoc,
+  userIdPropertyDescriptionDoc,
+} from '../../docs/documents';
+import { Type } from 'class-transformer';
+
+export class CustomEventDto {
+  @ApiProperty()
+  @IsString()
+  @MaxLength(255)
+  name: string;
+
+  @ApiProperty()
+  @IsObject()
+  @IsDefined()
+  params: Record<string, any>;
+}
 
 export class CustomEventsRequestDto {
   @ApiProperty({
@@ -30,10 +49,11 @@ export class CustomEventsRequestDto {
   user_id?: string;
 
   @ApiProperty({
-    type: [Object],
+    type: [CustomEventDto],
   })
   @IsArray()
   @ArrayNotEmpty()
-  @IsObject({ each: true })
-  events: Array<Record<string, any>>;
+  @ValidateNested({ each: true })
+  @Type(() => CustomEventDto)
+  events: CustomEventDto[];
 }
