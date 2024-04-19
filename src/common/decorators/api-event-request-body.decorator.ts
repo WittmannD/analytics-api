@@ -21,4 +21,4 @@ export const ApiEventRequestBody = <EventDto extends Type<unknown>>(
         ],
       },
     }),
-  )
+  );

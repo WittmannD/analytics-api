@@ -1,6 +1,4 @@
-import {
-  SessionIdStorage,
-} from '../storage/session-id-storage';
+import { SessionIdStorage } from '../storage/session-id-storage';
 import { Type } from '@nestjs/common';
 
 export interface ModuleOptions {
