@@ -7,6 +7,7 @@ WORKDIR /user/src/app
 
 COPY package.json package-lock.json ./
 
+RUN npm pkg delete scripts.prepare
 RUN npm ci --omit=dev
 
 COPY . .

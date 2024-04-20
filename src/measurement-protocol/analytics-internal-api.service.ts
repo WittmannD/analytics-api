@@ -9,6 +9,7 @@ import { SessionService } from './session.service';
 import crypto from 'node:crypto';
 import { isAxiosError } from 'axios';
 import { HttpServiceError } from '../common/errors/http-service-error';
+import * as util from 'node:util';
 
 export interface HitOptions extends Required<ModuleOptions> {
   clientId?: string;
@@ -98,7 +99,9 @@ export class AnalyticsInternalApiService {
         ),
       );
 
-      this.logger.log(`Response ${response.status}. Event: ${queryParams}`);
+      this.logger.log(
+        `Response ${response.status}. Event: ${util.inspect(queryParams, false, 3, true)}`,
+      );
     } catch (err: any) {
       if (isAxiosError(err)) {
         throw new HttpServiceError(

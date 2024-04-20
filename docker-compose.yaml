@@ -1,0 +1,34 @@
+version: '3.8'
+services:
+  web:  # DOCKER_BUILDKIT=1 docker build --pull -t ga-api-nginx -f docker/nginx/Dockerfile .
+    image: ga-api-nginx:latest
+    depends_on:
+      - api
+    ports:
+      - mode: host
+        published: 8181
+        target: 8181
+    deploy:
+      mode: global
+      restart_policy:
+        condition: on-failure
+    logging:
+      driver: json-file
+      options:
+        max-size: "1000k"
+        max-file: "2"
+
+  api:  # DOCKER_BUILDKIT=1 docker build -t ga-api -f docker/app/Dockerfile .
+    image: ga-api:latest
+    deploy:
+      mode: replicated
+      replicas: 1
+      restart_policy:
+        condition: on-failure
+    environment:
+      - PORT=3000
+    logging:
+      driver: json-file
+      options:
+        max-size: "1000k"
+        max-file: "2"
