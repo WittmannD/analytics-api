@@ -15,7 +15,7 @@ import { DiskStorage } from '../measurement-protocol/storage/disk-storage';
           'GOOGLE_ANALYTICS_MEASUREMENT_ID',
         ),
         storage: DiskStorage,
-        debug: true,
+        debug: Boolean(configService.get<string>('GOOGLE_ANALYTICS_DEBUG')),
       }),
       inject: [ConfigService],
     }),

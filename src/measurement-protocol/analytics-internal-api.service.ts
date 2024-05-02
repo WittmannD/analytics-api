@@ -1,15 +1,15 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
-import { MEASUREMENT_PROTOCOL_OPTIONS } from './constants';
-import { ModuleOptions } from './interfaces';
+import crypto from 'node:crypto';
+import { isAxiosError } from 'axios';
 import { HttpService } from '@nestjs/axios';
 import { firstValueFrom } from 'rxjs';
 import * as _ from 'lodash';
 import * as qs from 'qs';
+import { MEASUREMENT_PROTOCOL_OPTIONS } from './constants';
+import { ModuleOptions } from './interfaces';
 import { SessionService } from './session.service';
-import crypto from 'node:crypto';
-import { isAxiosError } from 'axios';
 import { HttpServiceError } from '../common/errors/http-service-error';
-import * as util from 'node:util';
+import { inspectObject } from '../common/utils/log';
 
 export interface HitOptions extends Required<ModuleOptions> {
   clientId?: string;
@@ -17,6 +17,7 @@ export interface HitOptions extends Required<ModuleOptions> {
 
 @Injectable()
 export class AnalyticsInternalApiService {
+  private readonly endpoint = 'https://www.google-analytics.com/g/collect';
   private readonly logger = new Logger(AnalyticsInternalApiService.name);
 
   constructor(
@@ -27,12 +28,11 @@ export class AnalyticsInternalApiService {
   ) {}
 
   private getHttpConfig() {
-    const endpoint = 'https://www.google-analytics.com/g/collect';
-
     return {
-      baseURL: endpoint,
       headers: {
-        'Content-Type': 'application/json',
+        'Content-Type': 'text/plain',
+        'User-Agent':
+          'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36',
       },
     };
   }
@@ -67,7 +67,7 @@ export class AnalyticsInternalApiService {
 
     const queryParams = {
       v: 2,
-      _p: Date.now(),
+      _p: Date.now() - 100,
       cid: clientId,
       sid: session.sessionId,
       tid: config.measurementId,
@@ -89,18 +89,18 @@ export class AnalyticsInternalApiService {
     try {
       const response = await firstValueFrom(
         this.httpService.post(
-          qs.stringify(queryParams, {
-            allowDots: true,
-            skipNulls: true,
-            addQueryPrefix: true,
-          }),
+          this.endpoint +
+            qs.stringify(queryParams, {
+              allowDots: true,
+              skipNulls: true,
+              addQueryPrefix: true,
+            }),
           null,
           this.getHttpConfig(),
         ),
       );
-
       this.logger.log(
-        `Response ${response.status}. Event: ${util.inspect(queryParams, false, 3, true)}`,
+        `Response ${response.status}. Event: ${inspectObject(queryParams)}`,
       );
     } catch (err: any) {
       if (isAxiosError(err)) {

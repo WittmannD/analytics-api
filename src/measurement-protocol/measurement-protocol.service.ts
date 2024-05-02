@@ -8,7 +8,7 @@ import { MEASUREMENT_PROTOCOL_OPTIONS } from './constants';
 import { ModuleOptions } from './interfaces';
 import { SessionService } from './session.service';
 import { HttpServiceError } from '../common/errors/http-service-error';
-import * as util from 'node:util';
+import { inspectObject } from '../common/utils/log';
 
 export interface FireEventOptions extends Required<ModuleOptions> {
   clientId?: string;
@@ -50,7 +50,7 @@ export class MeasurementProtocolService {
       );
 
       this.logger.log(
-        `Response ${response.status}. Event: ${util.inspect(payload, false, 3, true)}`,
+        `Response ${response.status}. Event: ${inspectObject(payload)}`,
       );
     } catch (err: any) {
       if (isAxiosError(err)) {
@@ -58,8 +58,8 @@ export class MeasurementProtocolService {
           const validation = err.response?.data;
 
           this.logger.error(
-            `Event with parameters ${util.inspect(payload, false, 3, true)} \
-            didn't pass validation ${util.inspect(validation, false, 3, true)}`,
+            `Event with parameters ${inspectObject(payload)} \
+            didn't pass validation ${inspectObject(validation)}`,
           );
         }
 
@@ -96,10 +96,17 @@ export class MeasurementProtocolService {
     params.engagement_time_msec =
       params.engagement_time_msec || config.defaultEngagementTimeMsec;
 
+    params = _(params).omitBy(_.isUndefined).omitBy(_.isNull).value();
+
     const payload = {
       client_id: clientId,
       user_id: userId,
-      events: [{ name, params }],
+      events: [
+        {
+          name,
+          params,
+        },
+      ],
     };
 
     await this.send(payload, config);
@@ -126,15 +133,19 @@ export class MeasurementProtocolService {
     };
 
     for (const event of events) {
+      const params = _({
+        ...event.params,
+        session_id: session.sessionId,
+        engagement_time_msec:
+          event.params.engagement_time_msec || config.defaultEngagementTimeMsec,
+      })
+        .omitBy(_.isUndefined)
+        .omitBy(_.isNull)
+        .value();
+
       payload.events.push({
         name: event.name,
-        params: {
-          ...event.params,
-          session_id: session.sessionId,
-          engagement_time_msec:
-            event.params.engagement_time_msec ||
-            config.defaultEngagementTimeMsec,
-        },
+        params,
       });
     }
 
