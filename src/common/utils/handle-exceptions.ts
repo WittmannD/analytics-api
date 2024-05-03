@@ -4,7 +4,10 @@ import { inspectObject } from './log';
 
 export const handleExceptions = (error: Error) => {
   if (error instanceof HttpServiceError) {
-    Logger.error(inspectObject(error), error.serviceName);
+    Logger.error(
+      `Error while requesting external service: ${inspectObject(error)}`,
+      error.serviceName,
+    );
     throw new HttpException(
       `Error while requesting external service: ${error.message}`,
       HttpStatus.BAD_REQUEST,

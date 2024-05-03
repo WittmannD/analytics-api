@@ -1,9 +1,12 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { SwaggerModule } from '@nestjs/swagger';
+import { WinstonLoggerServiceFactory } from './common/logger';
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+  const app = await NestFactory.create(AppModule, {
+    logger: WinstonLoggerServiceFactory('AnalyticsApp'),
+  });
   app.setGlobalPrefix('api/v1');
 
   const document = SwaggerModule.createDocument(app, {
