@@ -2,8 +2,12 @@ import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { SwaggerModule } from '@nestjs/swagger';
 import { WinstonLoggerServiceFactory } from './common/logger';
+import { Logger } from '@nestjs/common';
+import * as process from 'node:process';
 
 async function bootstrap() {
+  const logger = new Logger('main');
+
   const app = await NestFactory.create(AppModule, {
     logger: WinstonLoggerServiceFactory('AnalyticsApp'),
   });
@@ -38,6 +42,7 @@ async function bootstrap() {
     },
   });
 
+  logger.log(`listening on port ${process.env.PORT}`);
   await app.listen(process.env.PORT || 3000);
 }
 
